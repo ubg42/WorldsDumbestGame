@@ -18,10 +18,10 @@ gtag('config', 'G-NR1ZMKF4NN');
 <meta property="og:type" content="website">
 <meta property="og:description" content="Play the world’s dumbest game. Are you dumb enough to win?">
 <meta property="og:url" content="https://www.worldsdumbestgame.com/beta">
-<meta property="og:image" content="https://www.worldsdumbestgame.com/i/button.png">
+<meta property="og:image" content="./i/button.png">
 <meta property="og:site_name" content="worldsdumbestgame.com">
 <link rel="canonical" href="https://www.worldsdumbestgame.com/beta">
-<link rel="icon" href="/wdg32.png">
+<link rel="icon" href="./wdg32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dawning+of+a+New+Day&family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -216,7 +216,7 @@ gtag('config', 'G-NR1ZMKF4NN');
 
   /* ── Scores ────────────────────────────────────────────────── */
   function fetchScores() {
-    fetch('scores.php', {
+    fetch('./scores.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'hS=1'
