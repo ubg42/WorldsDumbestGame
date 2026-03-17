@@ -101,7 +101,7 @@ h1 a:hover  { color: var(--pink); text-decoration: none; }
   width: 140px;
   height: 158px;
   margin-top: -72px;
-  background: url(./i/button-large.png) center/contain no-repeat;
+  background: url(https://ubg42.github.io/WorldsDumbestGame/i/button-large.png) center/contain no-repeat;
   cursor: pointer;
   touch-action: none;
   -webkit-touch-callout: none;  /* iOS: no long-press save image */
@@ -118,7 +118,7 @@ h1 a:hover  { color: var(--pink); text-decoration: none; }
   filter: brightness(1.05);
 }
 #hold.pressed {
-  background-image: url(/i/button-large-down.png);
+  background-image: url(https://ubg42.github.io/WorldsDumbestGame/i/button-large-down.png);
   transform: scale(0.91);
   filter: brightness(0.92);
   transition: transform 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94),
