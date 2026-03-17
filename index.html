@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NR1ZMKF4NN"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-NR1ZMKF4NN');
+</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8073186300309643" crossorigin="anonymous"></script>
+<title>World’s Dumbest Game</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Play the world’s dumbest game. How long can you hold the button?">
+<meta property="og:title" content="World's Dumbest Game">
+<meta property="og:type" content="website">
+<meta property="og:description" content="Play the world’s dumbest game. Are you dumb enough to win?">
+<meta property="og:url" content="https://www.worldsdumbestgame.com/beta">
+<meta property="og:image" content="https://www.worldsdumbestgame.com/i/button.png">
+<meta property="og:site_name" content="worldsdumbestgame.com">
+<link rel="canonical" href="https://www.worldsdumbestgame.com/beta">
+<link rel="icon" href="/wdg32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dawning+of+a+New+Day&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/wdg.css?v=1773716536">
+</head>
+<body>
+<div id="screen">
+
+  <div id="wrapper">
+
+    <h1>World’s Dumbest Game</h1>
+    <p class="subtitle">How long can you hold the button?</p>
+
+    <!-- Game area: timer on top when active, button, message below -->
+    <div id="hold-area">
+      <div id="timer">00:00.0</div>
+      <div id="hold" role="button" aria-label="Hold this button" draggable="false" oncontextmenu="return false"></div>
+      <div class="game-msg" id="game-msg"></div>
+    </div>
+
+    <!-- Leaderboards injected here after game ends -->
+    <div id="scores-wrap" class="scores-wrap hidden"></div>
+
+    <p id="sitenav"><a href="/dumbest-er">Also try World’s Dumbest-er Game</a></p>
+
+    <p class="copyright">&copy;2013&ndash;2026 <a href="https://www.boredbutton.com" class="alt">Bored Button LLC</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/" class="alt">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/terms" class="alt">Terms</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="/privacy" class="alt">Privacy</a></p>
+    <!-- Preload pressed state -->
+    <img src="/i/button-large-down.png" style="display:none" alt="">
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const hold    = document.getElementById('hold');
+  const timer   = document.getElementById('timer');
+  const msg     = document.getElementById('game-msg');
+  const scoresW = document.getElementById('scores-wrap');
+
+  let startTime  = 0;
+  let rafId      = 0;
+  let isHolding  = false;
+  let elapsed    = 0;
+
+  /* ── Timer formatting ──────────────────────────────────────── */
+  function fmtTime(ms) {
+    const totalS = ms / 1000;
+    const m  = Math.floor(totalS / 60);
+    const s  = Math.floor(totalS % 60);
+    const ds = Math.floor((totalS % 1) * 10);
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + ds;
+  }
+
+  function tick() {
+    elapsed = Date.now() - startTime;
+    timer.textContent = fmtTime(elapsed);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  /* ── Start ─────────────────────────────────────────────────── */
+  function startGame(e) {
+    if (isHolding) return;
+    e.preventDefault();
+    isHolding = true;
+    startTime = Date.now();
+    elapsed   = 0;
+
+    hold.classList.add('pressed');
+    timer.classList.add('visible');
+    timer.textContent = '00:00.0';
+    msg.innerHTML = '';
+    scoresW.classList.add('hidden');
+    scoresW.innerHTML = '';
+
+    // Restore button visibility in case it was hidden from a prior round
+    hold.style.visibility = '';
+
+    rafId = requestAnimationFrame(tick);
+
+    document.addEventListener('mouseup',     endGame);
+    document.addEventListener('touchend',    endGame, { passive: false });
+    document.addEventListener('touchcancel', endGame, { passive: false });
+  }
+
+  /* ── End ───────────────────────────────────────────────────── */
+  function endGame(e) {
+    if (!isHolding) return;
+    e.preventDefault();
+    isHolding = false;
+
+    cancelAnimationFrame(rafId);
+    document.removeEventListener('mouseup',     endGame);
+    document.removeEventListener('touchend',    endGame);
+    document.removeEventListener('touchcancel', endGame);
+
+    hold.classList.remove('pressed');
+
+    // Hide button — collapses space because no min-height on hold-area
+    hold.style.display = 'none';
+
+    const t  = elapsed;
+    const m  = Math.floor(t / 60000);
+    const s  = Math.floor((t % 60000) / 1000);
+    const ms = Math.floor((t % 1000) / 100);
+
+    if (t === 0) {
+      showTryAgain();
+      fetchScores();
+      return;
+    }
+
+    fetch('scores.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'chk=1&t=' + t
+    })
+    .then(function(r) { return r.text(); })
+    .then(function(data) {
+      // scores.php echoes:  var res = 'true';  or  var res = 'false';
+      // Parse response safely — scores.php returns: var res = 'true'; or var res = 'false';
+      var isHighScore = data.indexOf("'true'") !== -1;
+      if (isHighScore) {
+        showInitialsForm(m, s, ms, t);
+      } else {
+        showTryAgain();
+        fetchScores();
+      }
+    })
+    .catch(function() {
+      showTryAgain();
+      fetchScores();
+    });
+  }
+
+  /* ── Messages ──────────────────────────────────────────────── */
+  function showTryAgain() {
+    msg.innerHTML = 'You can do better! <a href="/">Try again?</a>';
+  }
+
+  function showPlayAgain() {
+    msg.innerHTML = 'Well done! <a href="/">Play again?</a>';
+  }
+
+  function showInitialsForm(m, s, ms, t) {
+    msg.innerHTML =
+      'You win! Add your initials:' +
+      '<div class="initials-form">' +
+        '<input type="text" class="initials" maxlength="3" autocomplete="off" aria-label="Your initials">' +
+        '<button class="btn-submit" type="button">OK</button>' +
+      '</div>';
+
+    var input  = msg.querySelector('.initials');
+    var submit = msg.querySelector('.btn-submit');
+    input.focus();
+
+    var submitted = false;
+
+    function doSubmit() {
+      if (submitted) return;
+      submitted = true;
+
+      var init = input.value.trim().toUpperCase();
+      if (!init) { init = 'XXX'; }
+
+      // Remove form immediately to prevent double-submit
+      msg.innerHTML = 'Saving&hellip;';
+
+      fetch('scores.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'int=' + encodeURIComponent(init) +
+              '&m='  + m +
+              '&s='  + s +
+              '&ms=' + ms +
+              '&t='  + t
+      })
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        renderScores(html, true);
+        showPlayAgain();
+      })
+      .catch(function() {
+        showPlayAgain();
+      });
+    }
+
+    submit.addEventListener('click', doSubmit);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doSubmit();
+    });
+  }
+
+  /* ── Scores ────────────────────────────────────────────────── */
+  function fetchScores() {
+    fetch('scores.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'hS=1'
+    })
+    .then(function(r) { return r.text(); })
+    .then(function(html) { renderScores(html, false); })
+    .catch(function() {});
+  }
+
+  function renderScores(rawHtml, highlight) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = rawHtml;
+    scoresW.innerHTML = '';
+
+    var newScoreRows = [];
+
+    // scores.php returns .scores divs each containing .score-row divs
+    // Each .score-row has: .score-count (rank), .score-init (initials), .score-time (time)
+    // Highlighted rows have style="color:var(--pink)" on the .score-row div itself
+    var boards = tmp.querySelectorAll('.scores');
+    boards.forEach(function(board) {
+      var div = document.createElement('div');
+      div.className = 'score-board' + (highlight ? ' highlight' : '');
+
+      var h3 = board.querySelector('h3');
+      div.innerHTML = '<h3>' + (h3 ? h3.textContent : 'High Scores') + '</h3>';
+
+      board.querySelectorAll('.score-row').forEach(function(sourceRow) {
+        var row = document.createElement('div');
+        row.className = 'score-row';
+
+        // Carry through the pink highlight scores.php sets on the new entry
+        var inlineStyle = sourceRow.getAttribute('style');
+        if (inlineStyle) {
+          row.setAttribute('style', inlineStyle);
+          row.classList.add('new-score');
+          newScoreRows.push(row);
+        }
+
+        // Use the same class names scores.php outputs: score-count, score-init, score-time
+        var rank = sourceRow.querySelector('.score-count');
+        var init = sourceRow.querySelector('.score-init');
+        var time = sourceRow.querySelector('.score-time');
+
+        row.innerHTML =
+          '<span class="score-rank">'  + (rank ? rank.textContent.trim() : '') + '</span>' +
+          '<span class="score-init">'  + (init ? init.textContent.trim() : '') + '</span>' +
+          '<span class="score-time">'  + (time ? time.textContent.trim() : '') + '</span>';
+
+        div.appendChild(row);
+      });
+
+      scoresW.appendChild(div);
+    });
+
+    scoresW.classList.remove('hidden');
+    scoresW.style.opacity = '0';
+    scoresW.style.transition = 'opacity 0.4s';
+    requestAnimationFrame(function() {
+      scoresW.style.opacity = '1';
+      if (newScoreRows.length > 0) {
+        setTimeout(function() {
+          newScoreRows.forEach(function(row) { row.classList.add('score-flash'); });
+        }, 500);
+      }
+    });
+  }
+
+  /* ── Events ────────────────────────────────────────────────── */
+  hold.addEventListener('mousedown',  startGame);
+  hold.addEventListener('touchstart', startGame, { passive: false });
+
+  // Prevent long-press "Save Image" popup on mobile
+  hold.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
+  hold.addEventListener('touchforcechange', function(e) { e.preventDefault(); });
+
+  /* ── GDPR ──────────────────────────────────────────────────── */
+  var gdprBtn = document.querySelector('.gdpr-accept');
+  if (gdprBtn) {
+    gdprBtn.addEventListener('click', function() {
+      var el = document.getElementById('GDPR');
+      if (el) el.style.display = 'none';
+      fetch('/cookieGDPR.php', { method: 'POST' });
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
